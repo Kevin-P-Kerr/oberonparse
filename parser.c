@@ -2,7 +2,6 @@ struct Token {
   int type;
   char *value;
   int len;
-  Token *next;
 };
 
 struct ParseTree {
@@ -32,23 +31,20 @@ char *readFn(char* fname, int *stat) {
   return fbuf;
 };
 
-void allocTokenChunk(struct Token *base, int num) {
-    struct Token *t = malloc(sizeof(struct Token)*num);
-    while (num--) {
-      base->next = t[num];
-      base = base->next;
-    }
+struct Token *allocTokenChunk(struct Token *base, int num) {
+  return realloc(base,num);
 }
 
 
 struct Token *lex(char *fbuf) {
   char *l = fbuf;
-  struct Token baseToken = malloc(sizeof(struct Token));
-  struct Token *currentBase = &baseToken;
-  int tokenChunkSize = 5;
-  int i = 0;
-  allocTokenChunk(baseToken,tokenChunkSize);
+  struct Token *tokenlist = NULL;
+  int tokenListSize = 5;
+  int tokenChunksize = 5;
+  tokenList = allocTokenChunk(tokenList,tokenListSize);
   while (*l != '\0') {
+    int i =0;
+    int ii = tokenListSize;
     for (;i<tokenChunkSize;i++) {
       l = killwhite(l);
       if (('a' <= *l) && ('Z' >= *l)) {
@@ -56,10 +52,16 @@ struct Token *lex(char *fbuf) {
         currentBase[i].value = l;
         currentBase[i].len = lexIdent(l);
       }
-
-
-
-
+      if (('0' <= *l) &* ('9' >= *l)) {
+        currentBase[i].type = INTEGER;
+        currentBase[i].value = parseInt(l);
+        currentBase[i].len = -1;
+      }
+    }
+    tokenListSize += tokenChunkSize;
+    tokenlist = allocTokenChunk(tokenlist,tokenListSize);
+  }
+}
 
 int main(int argc, char**argv) {
   int status;
