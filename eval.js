@@ -93,25 +93,26 @@ var OberonParser = function (oberonScanner) {
     var error = function (type,token) {
         throw new Error(type + token);
     }
+
+    var check = function (type,token) {
+        if (type != token.type) {
+            error(type,token);
+        }
+    };
+
     var parseModule = function (tokens) {
         //(MODULE IDENT (DECLS) (STATEMENTS))
         var lead = tokens[i];
         var rest = tokens.slice(1);
-        if (lead.type != 'MODULE') {
-            error("expected token Module", lead);
-        }
+        check("MODULE",lead);
         var baseNode = new TreeNode(lead);
-        if (rest[0].type != 'IDENT') {
-            error("expected token Ident",rest[0]);
-        }
+        check("IDENT",rest[0]);
         baseNode.cdr = new TreeNode(rest[0]);
         rest = rest.slice(1);
-        if (rest[0].type != "SEMI") {
-            error("expected token Semi", rest[0]);
-        }
+        check("SEMI",rest[0]);
         rest = rest.slice(1);
         var externTokens = {tokens:rest}
-        baseNode.cdr.car = new TreeNode(parseDecls(externTokens));
+        baseNode.cdr.cdr = new TreeNode(parseDecls(externTokens));
         rest = externTokens.tokens;
         if (rest[0].type == 'BEGIN') {
             baseNode.cdr.cdr = new TreeNode(evalStatementSeq(rest.slice(1),env,results));
@@ -124,17 +125,16 @@ var OberonParser = function (oberonScanner) {
             error("bad end");
         }
         rest = rest.slice(1);
-        if (rest[0].type != 'DOT') {
-            error("expected dot",rest[0]);
-        }
+        check("DOT",rest[0]);
         rest = rest.slice(1);
         if (rest.length) {
             error("too many tokens");
         }
         return baseNode;
     };
-    var parseDecls = function (tokens, modEnv) {
-        //(((CONSTPART CONST STUFF)(VARPART VAR STUFF)(TYPEPART TYPE STUFF))((PROCEDURE PART STUFF)))
+    var parseDecls = function (tokensObj) {
+        var tokens = tokensObj.tokens;
+        //(((CONSTPART)(VARPART)(TYPEPART))(PROCEDURE PART STUFF))
         var lead = tokens[0];
         var rest = tokens.slice(1);
         var progress = function () {
@@ -142,25 +142,27 @@ var OberonParser = function (oberonScanner) {
             rest = rest.slice(1);
         }
         var baseNode = new TreeNode();
-        baseNode.car = new TreeNode();
-        baseNode.car.car = new TreeNode();
+        var variableParts = new TreeNode();
+        var constParts = variableParts.car = new TreeNode();
+        variableParts.cdr = new TreeNode();
+        var varPart = variableParts.cdr.car = new TreeNode();
+        variableParts.cdr.cdr = new TreeNode();
+        var typePart = variableParts.cdr.cdr.car = new TreeNode();
+        baseNode.car = variableParts;
+        baseNode.cdr = new TreeNode();
+        var procPart = new TreeNode();
+        baseNode.cdr.car = procPart;
         if (lead.type == 'CONST') {
-            rest = makeConst(rest,modEnv);
             progress();
         }
         if (lead.type == 'TYPE') {
-            rest = makeType(rest,modEnv);
             progress();
         }
         if (lead.type == 'VAR') {
-            rest = makeVar(rest,modEnv);
             progress();
         }
         while (lead.type == 'PROCEDURE') {
-            rest = makeProcedure(rest,modEnv);
-            if (rest[0].type != "SEMI") {
-                error("expected semi",rest[0]);
-            }
+            check("SEMI",rest[0]);
             progress();
             progress();
         }
