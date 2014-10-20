@@ -81,39 +81,40 @@ oberonTerminals.push(new Terminal("INT",/^[0-9]+/));
 
 oberonScanner = new Scanner(oberonTerminals);
 
-var OberonEvaluator = function (oberonScanner) {
-    this.eval = function (input,env) {
+var OberonParser = function (oberonScanner) {
+    this.parser = function (input,env) {
         var tokens = oberonScanner.scan(input);
         return evalModule(tokens);
     };
-    var EnvRecord = function (type,value) {
-        this.type = type;
-        this.value = value;
+    var TreeNode = function (val) {
+        this.car = val;
+        this.cdr;
     };
     var error = function (type,token) {
         throw new Error(type + token);
     }
-    var evalModule = function (tokens) {
+    var parseModule = function (tokens) {
+        //(MODULE IDENT (DECLS) (STATEMENTS))
         var lead = tokens[i];
         var rest = tokens.slice(1);
-        var results;
         if (lead.type != 'MODULE') {
             error("expected token Module", lead);
         }
-        var env = {};
+        var baseNode = new TreeNode(lead);
         if (rest[0].type != 'IDENT') {
             error("expected token Ident",rest[0]);
         }
-        var moduleName = rest[0].value;
+        baseNode.cdr = new TreeNode(rest[0]);
         rest = rest.slice(1);
-        env[moduleName] = new EnvRecord("MODULE",{});
         if (rest[0].type != "SEMI") {
             error("expected token Semi", rest[0]);
         }
         rest = rest.slice(1);
-        rest = evalDecls(rest,env[moduleName].value);
+        var externTokens = {tokens:rest}
+        baseNode.cdr.car = new TreeNode(parseDecls(externTokens));
+        rest = externTokens.tokens;
         if (rest[0].type == 'BEGIN') {
-            rest = evalStatementSeq(rest.slice(1),env,results);
+            baseNode.cdr.cdr = new TreeNode(evalStatementSeq(rest.slice(1),env,results));
         }
         if (rest[0].type != 'END') {
             error("expected token END", rest[0]);
@@ -130,15 +131,19 @@ var OberonEvaluator = function (oberonScanner) {
         if (rest.length) {
             error("too many tokens");
         }
-        return results;
+        return baseNode;
     };
-    var evalDecls = function (tokens, modEnv) {
+    var parseDecls = function (tokens, modEnv) {
+        //(((CONSTPART CONST STUFF)(VARPART VAR STUFF)(TYPEPART TYPE STUFF))((PROCEDURE PART STUFF)))
         var lead = tokens[0];
         var rest = tokens.slice(1);
         var progress = function () {
             lead = rest[0];
             rest = rest.slice(1);
         }
+        var baseNode = new TreeNode();
+        baseNode.car = new TreeNode();
+        baseNode.car.car = new TreeNode();
         if (lead.type == 'CONST') {
             rest = makeConst(rest,modEnv);
             progress();
