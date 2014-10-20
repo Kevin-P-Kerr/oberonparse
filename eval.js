@@ -79,3 +79,37 @@ oberonTerminals.push(new Terminal("IDENT",/^[A-Za-z][A-za-z0-9]+/));
 oberonTerminals.push(new Terminal("INT",/^[0-9]+/));
 
 oberonScanner = new Scanner(oberonTerminals);
+
+var OberonEvaluator = function (oberonScanner) {
+    this.eval = function (input,env) {
+        var tokens = oberonScanner.scan(input);
+        var lead = tokens[i];
+        switch (lead.type) {
+            case "INT" :
+                return parseInt(lead.value);
+                break;
+            case "IDENT" : 
+                return lookup(lead.value,env);
+                break;
+            case "MODULE":
+                return makeModule(input.slice(1),env);
+                break;
+            case "PROCEDURE":
+                return makeProcedure(input.slice(1),env);
+                break;
+            case "VAR":
+                return makeVar(input.slice(1),env);
+                break;
+            case "TYPE":
+                return makeType(input.slice(1),env);
+                break;
+            case "CONST":
+                return makeConst(input.slice(1),env);
+                break;
+            case "RECORD":
+                return makeRecord(input.slice(1),env);
+                break;
+            case "ARRAY":
+                return makeArray(input.slice(1),env);
+            case 
+
