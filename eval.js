@@ -79,8 +79,3 @@ oberonTerminals.push(new Terminal("IDENT",/^[A-Za-z][A-za-z0-9]+/));
 oberonTerminals.push(new Terminal("INT",/^[0-9]+/));
 
 oberonScanner = new Scanner(oberonTerminals);
-
-console.log(oberonScanner.scan("BEGIN VAR 1234 XYZ"));
-
-
-
