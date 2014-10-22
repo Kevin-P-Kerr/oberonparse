@@ -81,3 +81,9 @@ oberonTerminals.push(new Terminal("INT",/^[0-9]+/));
 
 oberonScanner = new Scanner(oberonTerminals);
 
+var i = function (t) {
+    var e = function (m) { throw new Error(m); }, c = function (t,test) { if (t.type != tst) return false; return true; }, ce = function (t,tst) { if (!c(t,tst)) {  e(tst);  }, th,tr,tp = function () { th = t[0]; t = s.slice(1); }, p = console.log;
+    var im = function () { ce(th,tnm); var ev = {}; tp(); tp(); tp(); id(ev); is(ev); };
+    var id = function (ev) { idv(ev); idp(ev); };
+    var idv = function (ev) { if(c(th,tnv)) { var v = []; tp();  
+
