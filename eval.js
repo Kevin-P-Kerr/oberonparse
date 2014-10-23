@@ -70,7 +70,8 @@ oberonTerminals.push(new Terminal("DO",/^DO/));
 oberonTerminals.push(new Terminal("END",/^END/));
 oberonTerminals.push(new Terminal("ELSE",/^ELSE/));
 oberonTerminals.push(new Terminal("ELSIF",/^ELSIF/));
-oberonTerminals.push(new Terminal("IF",/^WHILE/));
+oberonTerminals.push(new Terminal("IF",/^IF/));
+oberonTerminals.push(new Terminal("WHILE",/^WHILE/));
 oberonTerminals.push(new Terminal("ARRAY",/^ARRAY/));
 oberonTerminals.push(new Terminal("RECORD",/^RECORD/));
 oberonTerminals.push(new Terminal("CONST",/^CONST/));
@@ -237,8 +238,10 @@ var parse = function (tokens) {
   var pws = function () {
     console.log("PWS");
     ce(head,"WHILE");
+    next();
     pe();
     ce(head,"DO");
+    next();
     pss();
     ce(head,"END");
     next();
@@ -246,12 +249,15 @@ var parse = function (tokens) {
   var pis = function () {
     console.log("PIS");
     ce(head,"IF");
+    next();
     pe();
     ce(head,"THEN");
+    next();
     pss();
     while (c(head,"ELSIF")) {
       pe();
       ce(head,"THEN");
+      next();
       pss();
     }
     ce(head,"END");
@@ -260,6 +266,7 @@ var parse = function (tokens) {
   var pap = function () {
     console.log("PAP");
     ce(head,"LPAREN");
+    next();
     // NB you MUST have an expression here, which deviates from the ebnf
     pe();
     while (c(head,"COMMA")) {
@@ -393,7 +400,7 @@ var parse = function (tokens) {
       next();
       pselect();
     }
-    else if (c(head,"NUMBER")) {
+    else if (c(head,"INT")) {
       next();
     }
     else if (c(head,"LPAREN")) {
