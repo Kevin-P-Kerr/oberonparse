@@ -194,6 +194,7 @@ var parse = function (tokens) {
     console.log("PPB");
     pd();
     if (c(head,"BEGIN")) {
+      next();
       pss();
     }
     ce(head,"END");
