@@ -101,9 +101,30 @@ var parse = function (tokens) {
   var e = function (m) { throw new Error(m); };
   var c = function (t,tt) { return t.type == tt; };
   var ce = function (t,tt) { if (!c(t,tt)) e(tt); };
-  var next = function () { tokens = rest; head = tokens[0]; rest=tokens.slice(1); console.log(head.type +": "+head.value); }
-  var pm = function () {
-    console.log("PM");
+  var next = function () { tokens = rest; head = tokens[0]; rest=tokens.slice(1); log(head.type +": "+head.value); }
+  var log = (function () {
+      var indentLevel = 0;
+      return function (message,level,autodec) {
+          if (autodec) {
+              indentLevel--;
+          }
+          var il = indentLevel;
+          while (il--) {
+              message = ' '+message;
+          }
+          console.log(message);
+          if (level) { indentLevel += level }
+      };
+  })();
+  var dec = function (name,fn) {
+    return function() {
+        log(name,1);
+        fn.call(this);
+        log("/"+name,false,true);
+    };
+  };
+  var pm = dec("pm", function () {
+    console.log("PM",1);
     ce(head,"MODULE");
     next();
     ce(head,"IDENT");
@@ -120,10 +141,10 @@ var parse = function (tokens) {
     ce(head,"IDENT");
     next();
     ce(head,"DOT");
+    console.log("/PM",-1);
     return true;
-  };
-  var pd = function () {
-    console.log("PD");
+  });
+  var pd = dec("pd", function () {
     if (c(head,"CONST")) {
       next();
       pdc();
@@ -146,9 +167,8 @@ var parse = function (tokens) {
           next();
         }
     }
-  };
-  var pdc = function () {
-    console.log("PDC");
+  });
+  var pdc= dec("pdc", function () {
     while(c(head,"IDENT")) {
       next();
       ce(head,"EQ");
@@ -157,9 +177,8 @@ var parse = function (tokens) {
       ce(head,"SEMI");
       next();
     }
-  };
-  var pdt = function () {
-    console.log("PDT");
+  });
+  var pdt =dec("pdt", function () {
     while (c(head,"IDENT")) {
       next();
       ce(head,"EQ");
@@ -168,9 +187,8 @@ var parse = function (tokens) {
       ce(head,"SEMI");
       next();
     }
-  };
-  var pdv = function () {
-    console.log("PDV");
+  });
+  var pdv = dec("pdv",function () {
     while (c(head,"IDENT")) {
       pidl();
       ce(head,"COLON");
@@ -179,9 +197,8 @@ var parse = function (tokens) {
       ce(head,"SEMI");
       next();
     }
-  };
-  var pdp = function () {
-    console.log("PDP");
+  });
+  var pdp = dec("pdp",function () {
     pph();
     ce(head,"SEMI");
     next();
@@ -190,9 +207,8 @@ var parse = function (tokens) {
     next();
     ce(head,"IDENT");
     next();
-  }
-  var ppb = function () {
-    console.log("PPB");
+  });
+  var ppb = dec("ppb",function () {
     pd();
     if (c(head,"BEGIN")) {
       next();
@@ -202,17 +218,15 @@ var parse = function (tokens) {
     next();
     ce(head,"IDENT");
     next();
-  };
-  var pss = function () {
-    console.log("PSS");
+  });
+  var pss =dec("pss", function () {
     ps();
     while (c(head,"SEMI")) {
       next();
       ps();
     }
-  };
-  var ps = function () {
-    console.log("PS");
+  });
+  var ps =dec("ps", function () {
     if (c(head,"WHILE")) {
       pws();
     }
@@ -233,10 +247,9 @@ var parse = function (tokens) {
     else {
       e("bad statement");
     }
-  };
+  });
 
-  var pws = function () {
-    console.log("PWS");
+  var pws = dec("pws",function () {
     ce(head,"WHILE");
     next();
     pe();
@@ -245,9 +258,8 @@ var parse = function (tokens) {
     pss();
     ce(head,"END");
     next();
-  };
-  var pis = function () {
-    console.log("PIS");
+  });
+  var pis = dec("pis",function () {
     ce(head,"IF");
     next();
     pe();
@@ -262,9 +274,8 @@ var parse = function (tokens) {
     }
     ce(head,"END");
     next();
-  };
-  var pap = function () {
-    console.log("PAP");
+  });
+  var pap = dec("pap",function () {
     ce(head,"LPAREN");
     next();
     // NB you MUST have an expression here, which deviates from the ebnf
@@ -275,9 +286,8 @@ var parse = function (tokens) {
     }
     ce(head,"RPAREN");
     next();
-  };
-  var pph = function () {
-    console.log("PPH");
+  });
+  var pph = ("pph",function () {
     ce(head,"PROCEDURE");
     next();
     ce(head,"IDENT");
@@ -287,9 +297,8 @@ var parse = function (tokens) {
         ppfp();
       }
     }
-  };
-  var ppfp = function () {
-    console.log("PPFP");
+  });
+  var ppfp =dec("ppfp", function () {
     ce(head,"LPAREN");
     next();
     if (c(head,"RPAREN")) {
@@ -303,18 +312,16 @@ var parse = function (tokens) {
     }
     next();
     return;
-  };
-  var ppfpfps = function () {
-    console.log("PPFPFPS");
+  });
+  var ppfpfps =dec("ppfpfps", function () {
     if (c(head,"VAR")) {
       next();
     }
     pidl();
     ce(head,"COLON");
     pt();
-  };
-  var pidl = function () {
-    console.log("PIDL");
+  });
+  var pidl = dec("pidl",function () {
     ce(head,"IDENT");
     next();
     while (c(head,"COMMA")) {
@@ -322,9 +329,8 @@ var parse = function (tokens) {
       ce(head,"IDENT");
       next();
     }
-  };
-  var pt = function () {
-    console.log("PT");
+  });
+  var pt = dec("pt",function () {
     if (c(head,"IDENT")) {
       next();
       return;
@@ -340,27 +346,24 @@ var parse = function (tokens) {
     else {
       e("bad type decl: "+ head.type);
     }
-  };
-  var pat = function () {
-    console.log("PAT");
+  });
+  var pat =dec("pat", function () {
     ce(head,"ARRAY");
     next();
     pe();
     ce(head,"OF");
     next();
     pt();
-  }
-  var pe = function () {
-    console.log("PE");
+  });
+  var pe = dec("pe",function () {
     pse();
     var cc = function (t) { return c(head,t); };
     if (cc("EQ") || cc("HASH") || cc("LT") || cc("LTE") || cc("GT") || cc("GTE")) {
       next();
       pse();
     }
-  };
-  var pse = function () {
-    console.log("PSE");
+  });
+  var pse = dec("pse",function () {
     var cc = function (t) { return c(head,t); };
     if (cc("PLUS") || cc("MINUS")) {
       next();
@@ -370,18 +373,16 @@ var parse = function (tokens) {
       next();
       pterm();
     }
-  };
-  var pterm = function () {
-    console.log("PTERM");
+  });
+  var pterm = dec("pterm",function () {
     var cc = function (t) { return c(head,t); };
     pfactor();
     while (cc("ASTER") || cc("DIV") || cc("MOD") || cc("AND")) {
       next();
       pfactor();
     }
-  };
-  var pselect = function () {
-    console.log("PSELECT");
+  });
+  var pselect =dec("pselect", function () {
     if (c(head,"DOT")) {
       next();
       ce(head,"IDENT");
@@ -393,9 +394,8 @@ var parse = function (tokens) {
       ce(head,"RBRAK");
       next();
     }
-  };
-  var pfactor = function () {
-    console.log("PFACTOR");
+  });
+  var pfactor = dec("pfactor",function () {
     if (c(head,"IDENT")) {
       next();
       pselect();
@@ -416,10 +416,9 @@ var parse = function (tokens) {
     else {
       e("bad factor:"+head.type);
     }
-  };
+  });
 
-  var prt = function () {
-    console.log("PRT");
+  var prt = dec("prt",function () {
     ce(head,"RECORD");
     next();
     pfl();
@@ -430,7 +429,7 @@ var parse = function (tokens) {
     }
     ce(head,"END");
     next();
-  };
+  });
   pm();
 };
 
