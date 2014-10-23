@@ -14,7 +14,7 @@ BEGIN Read(x); Read(y); z := 0;
 
  END ; 
 
- Write(x); Write(y); Write(z); WriteLn 
+ Write(x); Write(y); Write(z)
 
 END Multiply; 
 

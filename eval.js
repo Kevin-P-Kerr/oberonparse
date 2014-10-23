@@ -159,8 +159,8 @@ var parse = function (tokens) {
     }
     if (c(head,"PROCEDURE")) {
         pdp();
-        next();
         ce(head,"SEMI");
+        next();
         while(c(head,"PROCEDURE")){
           pdp();
           ce(head,"SEMI");
@@ -203,10 +203,6 @@ var parse = function (tokens) {
     ce(head,"SEMI");
     next();
     ppb();
-    ce(head,"END");
-    next();
-    ce(head,"IDENT");
-    next();
   });
   var ppb = dec("ppb",function () {
     pd();
