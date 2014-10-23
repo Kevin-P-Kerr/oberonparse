@@ -100,7 +100,7 @@ var parse = function (tokens) {
   var e = function (m) { throw new Error(m); };
   var c = function (t,tt) { return t.type == tt; };
   var ce = function (t,tt) { if (!c(t,tt)) ce(tt); };
-  var next = function () { tokens = rest; head = tokens[0]; rest=tokens.slice(1); }
+  var next = function () { tokens = rest; head = tokens[0]; rest=tokens.slice(1); console.log(head.type +": "+head.value); }
   var pm = function () {
     ce(head,"MODULE");
     next();
@@ -123,17 +123,15 @@ var parse = function (tokens) {
       next();
       pdc();
     }
-    next();
     if (c(head,"VAR")) {
       next();
       pdv();
     }
-    next();
     if (c(head,"TYPE")) {
       next();
       pdt();
     }
-    next();
+    //TODO : fix this
     ce(head,"PROCEDURE");
     next();
     pdp();
@@ -155,9 +153,29 @@ var parse = function (tokens) {
       next();
     }
   };
-  var pdt = pdc;
-  var pdv = pdc;
+  var pdt = function () {
+    while (c(head,"IDENT")) {
+      next();
+      ce(head,"EQ");
+      next();
+      pt();
+      ce(head,"SEMI");
+      next();
+    }
+  };
+  var pdv = function () {
+    console.log("PARSING PDV");
+    while (c(head,"IDENT")) {
+      pidl();
+      ce(head,"COLON");
+      next();
+      pt();
+      ce(head,"SEMI");
+      next();
+    }
+  };
   var pdp = function () {
+    console.log("PDP");
     pph();
     ce(head,"SEMI");
     ppb();
@@ -239,6 +257,7 @@ var parse = function (tokens) {
     next();
   };
   var pph = function () {
+    console.log("PPH");
     ce(head,"PROCEDURE");
     next();
     ce(head,"IDENT");
@@ -248,6 +267,7 @@ var parse = function (tokens) {
         ppfp();
       }
     }
+    console.log("LEAVING PPH");
   };
   var ppfp = function () {
     ce(head,"LPAREN");
@@ -294,7 +314,7 @@ var parse = function (tokens) {
       return;
     }
     else {
-      e("bad type decl");
+      e("bad type decl: "+ head.type);
     }
   };
   var pat = function () {
@@ -364,7 +384,7 @@ var parse = function (tokens) {
       pfactor();
     }
     else {
-      e("bad factor");
+      e("bad factor:"+head.type);
     }
   };
 
