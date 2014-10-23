@@ -332,6 +332,19 @@ var parse = function (tokens) {
       pfactor();
     }
   };
+  var pselect = function () {
+    if (c(head,"DOT")) {
+      next();
+      ce(head,"IDENT");
+      next();
+    }
+    else if (c(head,"LBRAK")) {
+      next();
+      pe();
+      ce(head,"RBRAK");
+      next();
+    }
+  };
   var pfactor = function () {
     if (c(head,"IDENT")) {
       next();
@@ -367,6 +380,8 @@ var parse = function (tokens) {
     ce(head,"END");
     next();
   };
+  pm();
+};
 
 
 
