@@ -272,16 +272,17 @@ var parse = function (tokens) {
     next();
   });
   var pap = dec("pap",function () {
-    ce(head,"LPAREN");
-    next();
-    // NB you MUST have an expression here, which deviates from the ebnf
-    pe();
-    while (c(head,"COMMA")) {
-      next();
-      pe();
+    if(c(head,"LPAREN")) {
+        next();
+        // NB you MUST have an expression here, which deviates from the ebnf
+        pe();
+        while (c(head,"COMMA")) {
+          next();
+          pe();
+        }
+        ce(head,"RPAREN");
+        next();
     }
-    ce(head,"RPAREN");
-    next();
   });
   var pph = ("pph",function () {
     ce(head,"PROCEDURE");
