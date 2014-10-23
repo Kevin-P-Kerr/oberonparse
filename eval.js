@@ -41,6 +41,7 @@ var Token = function (terminal,match) {
 var oberonTerminals = [];
 
 oberonTerminals.push(new Terminal("ASTER",/^\*/));
+oberonTerminals.push(new Terminal("TILDE",/^~/));
 oberonTerminals.push(new Terminal("DIV",/^DIV/));
 oberonTerminals.push(new Terminal("MOD",/^MOD/));
 oberonTerminals.push(new Terminal("AND",/^&/));
@@ -48,6 +49,7 @@ oberonTerminals.push(new Terminal("PLUS",/^\+/));
 oberonTerminals.push(new Terminal("MINUS",/^-/));
 oberonTerminals.push(new Terminal("OR",/^OR/));
 oberonTerminals.push(new Terminal("EQ",/^=/));
+oberonTerminals.push(new Terminal("ASSN",/^:=/));
 oberonTerminals.push(new Terminal("HASH",/^#/));
 oberonTerminals.push(new Terminal("LT",/^</));
 oberonTerminals.push(new Terminal("LTE",/^<=/));
@@ -164,6 +166,78 @@ var parse = function (tokens) {
     ce(head,"IDENT");
     next();
   }
+  var ppb = function () {
+    pd();
+    if (c(head,"BEGIN")) {
+      pss();
+    }
+    ce(head,"END");
+    next();
+    ce(head,"IDENT");
+    next();
+  };
+  var pss = function () {
+    ps();
+    while (c(head,"SEMI")) {
+      next();
+      ps();
+    }
+  };
+  var ps = function () {
+    if (c(head,"WHILE")) {
+      pws();
+    }
+    else if (c(head,"IF")) {
+      pis();
+    }
+    else if (c(head,"IDENT")) {
+      next();
+      pselect();
+      if (c(head,"ASSN")) {
+        next();
+        pe();
+      }
+      else {
+        pap();
+      }
+    }
+    else {
+      e("bad statement");
+    }
+  };
+
+  var pws = function () {
+    ce(head,"WHILE");
+    pe();
+    ce(head,"DO");
+    pss();
+    ce(head,"END");
+    next();
+  };
+  var pis = function () {
+    ce(head,"IF");
+    pe();
+    ce(head,"THEN");
+    pss();
+    while (c(head,"ELSIF")) {
+      pe();
+      ce(head,"THEN");
+      pss();
+    }
+    ce(head,"END");
+    next();
+  };
+  var pap = function () {
+    ce(head,"LPAREN");
+    // NB you MUST have an expression here, which deviates from the ebnf
+    pe();
+    while (c(head,"COMMA")) {
+      next();
+      pe();
+    }
+    ce(head,"RPAREN");
+    next();
+  };
   var pph = function () {
     ce(head,"PROCEDURE");
     next();
@@ -231,6 +305,56 @@ var parse = function (tokens) {
     next();
     pt();
   }
+  var pe = function () {
+    pse();
+    var cc = function (t) { return c(head,t); };
+    if (cc("EQ") || cc("HASH") || cc("LT") || cc("LTE") || cc("GT") || cc("GTE")) {
+      next();
+      pse();
+    }
+  };
+  var pse = function () {
+    var cc = function (t) { return c(head,t); };
+    if (cc("PLUS") || cc("MINUS")) {
+      next();
+    }
+    pterm();
+    while (cc("PLUS") || cc("MINUS") || cc("OR")) {
+      next();
+      pterm();
+    }
+  };
+  var pterm = function () {
+    var cc = function (t) { return c(head,t); };
+    pfactor();
+    while (cc("ASTER") || cc("DIV") || cc("MOD") || cc("AND")) {
+      next();
+      pfactor();
+    }
+  };
+  var pfactor = function () {
+    if (c(head,"IDENT")) {
+      next();
+      pselect();
+    }
+    else if (c(head,"NUMBER")) {
+      next();
+    }
+    else if (c(head,"LPAREN")) {
+      next();
+      pe();
+      ce(head,"RPAREN");
+      next();
+    }
+    else if (c(head,"TILDE")) {
+      next();
+      pfactor();
+    }
+    else {
+      e("bad factor");
+    }
+  };
+
   var prt = function () {
     ce(head,"RECORD");
     next();
