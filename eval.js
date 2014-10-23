@@ -119,12 +119,12 @@ var parse = function (tokens) {
   var dec = function (name,fn) {
     return function() {
         log(name,1);
-        fn.call(this);
+        var ret = fn.call(this);
         log("/"+name,false,true);
+        if (ret != undefined) { return ret; }
     };
   };
   var pm = dec("pm", function () {
-    console.log("PM",1);
     ce(head,"MODULE");
     next();
     ce(head,"IDENT");
@@ -135,13 +135,11 @@ var parse = function (tokens) {
     if(c(head,"BEGIN")) {
       ps();
     }
-    next();
     ce(head,"END");
     next();
     ce(head,"IDENT");
     next();
     ce(head,"DOT");
-    console.log("/PM",-1);
     return true;
   });
   var pd = dec("pd", function () {
@@ -267,6 +265,10 @@ var parse = function (tokens) {
       ce(head,"THEN");
       next();
       pss();
+    }
+    if (c(head,"ELSE")) {
+        next();
+        pss();
     }
     ce(head,"END");
     next();
@@ -427,7 +429,7 @@ var parse = function (tokens) {
     ce(head,"END");
     next();
   });
-  pm();
+  return pm();
 };
 
 var fs = require('fs');
