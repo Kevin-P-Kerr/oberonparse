@@ -80,10 +80,174 @@ oberonTerminals.push(new Terminal("IDENT",/^[A-Za-z][A-za-z0-9]+/));
 oberonTerminals.push(new Terminal("INT",/^[0-9]+/));
 
 oberonScanner = new Scanner(oberonTerminals);
-
+var test = "MODULE foo; x,y,z:INTEGER; x := 2; y := 3; z := x + y; print(z); END foo."
+/*
 var i = function (t) {
     var e = function (m) { throw new Error(m); }, c = function (t,test) { if (t.type != tst) return false; return true; }, ce = function (t,tst) { if (!c(t,tst)) {  e(tst);  }, th,tr,tp = function () { th = t[0]; t = s.slice(1); }, p = console.log;
     var im = function () { ce(th,tnm); var ev = {}; tp(); tp(); tp(); id(ev); is(ev); };
     var id = function (ev) { idv(ev); idp(ev); };
     var idv = function (ev) { if(c(th,tnv)) { var v = []; tp(); while(c(th,tni) { v.push(th); tp(); ce(th,tnc); tp(); } ce(th,tncl); tp(); ce(th,tni); v.forEach(function (v) { ev[v.value] = {t:th.value} }); }};
+    var idp = function (ev) { }
+    var is = function(ev) {  }
+*/
 
+var parse = function (tokens) {
+  var syntax = {};
+  var head = tokens[0];
+  var rest = tokens.slice(1);
+  var e = function (m) { throw new Error(m); };
+  var c = function (t,tt) { return t.type == tt; };
+  var ce = function (t,tt) { if (!c(t,tt) ce(tt); };
+  var next = function () { tokens = rest; head = tokens[0]; rest=tokens.slice(1); }
+  var pm = function () {
+    ce(head,"MODULE");
+    next();
+    ce(head,"IDENT");
+    next();
+    pd();
+    if(c(head,"BEGIN")) {
+      ps();
+    }
+    next();
+    ce(head,"END");
+    next();
+    ce(head,"IDENT");
+    next();
+    ce(head,"DOT");
+    return true;
+  };
+  var pd = function () {
+    if (c(head,"CONST")) {
+      next();
+      pdc();
+    }
+    next();
+    if (c(head,"VAR")) {
+      next();
+      pdv();
+    }
+    next();
+    if (c(head,"TYPE")) {
+      next();
+      pdt();
+    }
+    next();
+    ce(head,"PROCEDURE");
+    next();
+    pdp();
+    next();
+    ce(head,"SEMI");
+    while(c(head,"PROCEDURE")){
+      pdp();
+      ce(head,"SEMI");
+      next();
+    }
+  };
+  var pdc = function () {
+    while(c(head,"IDENT")) {
+      next();
+      ce(head,"EQ");
+      next();
+      pe();
+      ce(head,"SEMI");
+      next();
+    }
+  };
+  var pdt = pdc;
+  var pdv = pdc;
+  var pdp = function () {
+    pph();
+    ce(head,"SEMI");
+    ppb();
+    ce(head,"END");
+    next();
+    ce(head,"IDENT");
+    next();
+  }
+  var pph = function () {
+    ce(head,"PROCEDURE");
+    next();
+    ce(head,"IDENT");
+    next();
+    if (c(head,"LPAREN")) {
+      while (c(head,"LPAREN")) {
+        ppfp();
+      }
+    }
+  };
+  var ppfp = function () {
+    ce(head,"LPAREN");
+    next();
+    if (c(head,"RPAREN")) {
+      next();
+      return;
+    }
+    ppfpfps();
+    while (!c(head,"RPAREN")) {
+      ce(head,"SEMI");
+      ppfpfps();
+    }
+    next();
+    return;
+  };
+  var ppfpfps = function () {
+    if (c(head,"VAR")) {
+      next();
+    }
+    pidl();
+    ce(head,"COLON");
+    pt();
+  };
+  var pidl = function () {
+    ce(head,"IDENT");
+    while (c(head,"COMMA")) {
+      next();
+      ce(head,"IDENT");
+      next();
+    }
+  };
+  var pt = function () {
+    if (c(head,"IDENT")) {
+      next();
+      return;
+    }
+    else if (c(head,"ARRAY")) {
+      pat();
+      return;
+    }
+    else if (c(head,"RECORD")) {
+      prt();
+      return;
+    }
+    else {
+      e("bad type decl");
+    }
+  };
+  var pat = function () {
+    ce(head,"ARRAY");
+    next();
+    pe();
+    ce(head,"OF");
+    next();
+    pt();
+  }
+  var prt = function () {
+    ce(head,"RECORD");
+    next();
+    pfl();
+    if (c(head,"SEMI")) {
+      while (c(head,"SEMI")) {
+        pfl();
+      }
+    }
+    ce(head,"END");
+    next();
+  };
+
+
+
+
+
+
+
+    
