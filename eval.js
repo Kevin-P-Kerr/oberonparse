@@ -78,7 +78,7 @@ oberonTerminals.push(new Terminal("VAR",/^VAR/));
 oberonTerminals.push(new Terminal("PROCEDURE",/^PROCEDURE/));
 oberonTerminals.push(new Terminal("BEGIN",/^BEGIN/));
 oberonTerminals.push(new Terminal("MODULE",/^MODULE/));
-oberonTerminals.push(new Terminal("IDENT",/^[A-Za-z][A-za-z0-9]+/));
+oberonTerminals.push(new Terminal("IDENT",/^[A-Za-z][A-za-z0-9]*/));
 oberonTerminals.push(new Terminal("INT",/^[0-9]+/));
 
 oberonScanner = new Scanner(oberonTerminals);
@@ -99,7 +99,7 @@ var parse = function (tokens) {
   var rest = tokens.slice(1);
   var e = function (m) { throw new Error(m); };
   var c = function (t,tt) { return t.type == tt; };
-  var ce = function (t,tt) { if (!c(t,tt) ce(tt); };
+  var ce = function (t,tt) { if (!c(t,tt)) ce(tt); };
   var next = function () { tokens = rest; head = tokens[0]; rest=tokens.slice(1); }
   var pm = function () {
     ce(head,"MODULE");
@@ -383,10 +383,7 @@ var parse = function (tokens) {
   pm();
 };
 
-
-
-
-
-
-
-    
+var fs = require('fs');
+var sampleString = fs.readFileSync("./example.obn").toString();
+var tokens = oberonScanner.scan(sampleString);
+console.log(parse(tokens));
