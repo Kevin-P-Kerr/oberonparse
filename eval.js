@@ -40,6 +40,7 @@ var Token = function (terminal,match) {
 
 var oberonTerminals = [];
 
+oberonTerminals.push(new Terminal("MODULE",/^MODULE/));
 oberonTerminals.push(new Terminal("ASTER",/^\*/));
 oberonTerminals.push(new Terminal("TILDE",/^~/));
 oberonTerminals.push(new Terminal("DIV",/^DIV/));
@@ -77,7 +78,6 @@ oberonTerminals.push(new Terminal("TYPE",/^TYPE/));
 oberonTerminals.push(new Terminal("VAR",/^VAR/));
 oberonTerminals.push(new Terminal("PROCEDURE",/^PROCEDURE/));
 oberonTerminals.push(new Terminal("BEGIN",/^BEGIN/));
-oberonTerminals.push(new Terminal("MODULE",/^MODULE/));
 oberonTerminals.push(new Terminal("IDENT",/^[A-Za-z][A-za-z0-9]*/));
 oberonTerminals.push(new Terminal("INT",/^[0-9]+/));
 
@@ -99,12 +99,15 @@ var parse = function (tokens) {
   var rest = tokens.slice(1);
   var e = function (m) { throw new Error(m); };
   var c = function (t,tt) { return t.type == tt; };
-  var ce = function (t,tt) { if (!c(t,tt)) ce(tt); };
+  var ce = function (t,tt) { if (!c(t,tt)) e(tt); };
   var next = function () { tokens = rest; head = tokens[0]; rest=tokens.slice(1); console.log(head.type +": "+head.value); }
   var pm = function () {
+    console.log("PM");
     ce(head,"MODULE");
     next();
     ce(head,"IDENT");
+    next();
+    ce(head,"SEMI");
     next();
     pd();
     if(c(head,"BEGIN")) {
@@ -119,6 +122,7 @@ var parse = function (tokens) {
     return true;
   };
   var pd = function () {
+    console.log("PD");
     if (c(head,"CONST")) {
       next();
       pdc();
@@ -131,19 +135,19 @@ var parse = function (tokens) {
       next();
       pdt();
     }
-    //TODO : fix this
-    ce(head,"PROCEDURE");
-    next();
-    pdp();
-    next();
-    ce(head,"SEMI");
-    while(c(head,"PROCEDURE")){
-      pdp();
-      ce(head,"SEMI");
-      next();
+    if (c(head,"PROCEDURE")) {
+        pdp();
+        next();
+        ce(head,"SEMI");
+        while(c(head,"PROCEDURE")){
+          pdp();
+          ce(head,"SEMI");
+          next();
+        }
     }
   };
   var pdc = function () {
+    console.log("PDC");
     while(c(head,"IDENT")) {
       next();
       ce(head,"EQ");
@@ -154,6 +158,7 @@ var parse = function (tokens) {
     }
   };
   var pdt = function () {
+    console.log("PDT");
     while (c(head,"IDENT")) {
       next();
       ce(head,"EQ");
@@ -164,7 +169,7 @@ var parse = function (tokens) {
     }
   };
   var pdv = function () {
-    console.log("PARSING PDV");
+    console.log("PDV");
     while (c(head,"IDENT")) {
       pidl();
       ce(head,"COLON");
@@ -178,6 +183,7 @@ var parse = function (tokens) {
     console.log("PDP");
     pph();
     ce(head,"SEMI");
+    next();
     ppb();
     ce(head,"END");
     next();
@@ -185,6 +191,7 @@ var parse = function (tokens) {
     next();
   }
   var ppb = function () {
+    console.log("PPB");
     pd();
     if (c(head,"BEGIN")) {
       pss();
@@ -195,6 +202,7 @@ var parse = function (tokens) {
     next();
   };
   var pss = function () {
+    console.log("PSS");
     ps();
     while (c(head,"SEMI")) {
       next();
@@ -202,6 +210,7 @@ var parse = function (tokens) {
     }
   };
   var ps = function () {
+    console.log("PS");
     if (c(head,"WHILE")) {
       pws();
     }
@@ -225,6 +234,7 @@ var parse = function (tokens) {
   };
 
   var pws = function () {
+    console.log("PWS");
     ce(head,"WHILE");
     pe();
     ce(head,"DO");
@@ -233,6 +243,7 @@ var parse = function (tokens) {
     next();
   };
   var pis = function () {
+    console.log("PIS");
     ce(head,"IF");
     pe();
     ce(head,"THEN");
@@ -246,6 +257,7 @@ var parse = function (tokens) {
     next();
   };
   var pap = function () {
+    console.log("PAP");
     ce(head,"LPAREN");
     // NB you MUST have an expression here, which deviates from the ebnf
     pe();
@@ -267,9 +279,9 @@ var parse = function (tokens) {
         ppfp();
       }
     }
-    console.log("LEAVING PPH");
   };
   var ppfp = function () {
+    console.log("PPFP");
     ce(head,"LPAREN");
     next();
     if (c(head,"RPAREN")) {
@@ -285,6 +297,7 @@ var parse = function (tokens) {
     return;
   };
   var ppfpfps = function () {
+    console.log("PPFPFPS");
     if (c(head,"VAR")) {
       next();
     }
@@ -293,7 +306,9 @@ var parse = function (tokens) {
     pt();
   };
   var pidl = function () {
+    console.log("PIDL");
     ce(head,"IDENT");
+    next();
     while (c(head,"COMMA")) {
       next();
       ce(head,"IDENT");
@@ -301,6 +316,7 @@ var parse = function (tokens) {
     }
   };
   var pt = function () {
+    console.log("PT");
     if (c(head,"IDENT")) {
       next();
       return;
@@ -318,6 +334,7 @@ var parse = function (tokens) {
     }
   };
   var pat = function () {
+    console.log("PAT");
     ce(head,"ARRAY");
     next();
     pe();
@@ -326,6 +343,7 @@ var parse = function (tokens) {
     pt();
   }
   var pe = function () {
+    console.log("PE");
     pse();
     var cc = function (t) { return c(head,t); };
     if (cc("EQ") || cc("HASH") || cc("LT") || cc("LTE") || cc("GT") || cc("GTE")) {
@@ -334,6 +352,7 @@ var parse = function (tokens) {
     }
   };
   var pse = function () {
+    console.log("PSE");
     var cc = function (t) { return c(head,t); };
     if (cc("PLUS") || cc("MINUS")) {
       next();
@@ -345,6 +364,7 @@ var parse = function (tokens) {
     }
   };
   var pterm = function () {
+    console.log("PTERM");
     var cc = function (t) { return c(head,t); };
     pfactor();
     while (cc("ASTER") || cc("DIV") || cc("MOD") || cc("AND")) {
@@ -353,6 +373,7 @@ var parse = function (tokens) {
     }
   };
   var pselect = function () {
+    console.log("PSELECT");
     if (c(head,"DOT")) {
       next();
       ce(head,"IDENT");
@@ -366,6 +387,7 @@ var parse = function (tokens) {
     }
   };
   var pfactor = function () {
+    console.log("PFACTOR");
     if (c(head,"IDENT")) {
       next();
       pselect();
@@ -389,6 +411,7 @@ var parse = function (tokens) {
   };
 
   var prt = function () {
+    console.log("PRT");
     ce(head,"RECORD");
     next();
     pfl();
@@ -406,4 +429,5 @@ var parse = function (tokens) {
 var fs = require('fs');
 var sampleString = fs.readFileSync("./example.obn").toString();
 var tokens = oberonScanner.scan(sampleString);
+//console.log(tokens);
 console.log(parse(tokens));
