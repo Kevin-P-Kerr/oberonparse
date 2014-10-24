@@ -137,7 +137,7 @@ var parse = function (tokens) {
     syntax.modulePart.declartionsPart = {};
     pd(syntax.modulePart.declartionsPart);
     if(c(head,"BEGIN")) {
-      syntax.modulePart.statementsPart = {};
+      syntax.modulePart.statementPart = {};
       ps(syntax.modulePart.statementsPart);
     }
     ce(head,"END");
@@ -176,75 +176,108 @@ var parse = function (tokens) {
     }
   });
   var pdc= dec("pdc", function (syntax) {
+    syntax.decls = [];
     while(c(head,"IDENT")) {
-      next();
-      ce(head,"EQ");
-      next();
-      pe();
-      ce(head,"SEMI");
-      next();
+      (function () {
+        var decl = {ident:head};
+        next();
+        ce(head,"EQ");
+        next();
+        pe(decl);
+        ce(head,"SEMI");
+        next();
+        syntax.decls.push(decl);
+      })();
     }
   });
-  var pdt =dec("pdt", function () {
+  var pdt =dec("pdt", function (syntax) {
+    syntax.decls = [];
     while (c(head,"IDENT")) {
-      next();
-      ce(head,"EQ");
-      next();
-      pt();
-      ce(head,"SEMI");
-      next();
+      (function () {
+        var decl = {ident:head};
+        next();
+        ce(head,"EQ");
+        next();
+        pt(decl);
+        ce(head,"SEMI");
+        next();
+        syntax.decls.push(decl);
+      })();
     }
   });
-  var pdv = dec("pdv",function () {
+  var pdv = dec("pdv",function (syntax) {
+    syntax.decls = [];
     while (c(head,"IDENT")) {
-      pidl();
-      ce(head,"COLON");
-      next();
-      pt();
-      ce(head,"SEMI");
-      next();
+      (function () {
+        var decl = {idents:[]};
+        pidl(decl.idents);
+        ce(head,"COLON");
+        next();
+        pt(decl);
+        ce(head,"SEMI");
+        next();
+      })();
     }
   });
-  var pdp = dec("pdp",function () {
-    pph();
+  var pdp = dec("pdp",function (syntax) {
+    syntax.headerPart = {};
+    pph(syntax.headerPart);
     ce(head,"SEMI");
     next();
-    ppb();
+    syntax.bodyPart = {};
+    ppb(syntax.bodyPart);
   });
-  var ppb = dec("ppb",function () {
-    pd();
+  var ppb = dec("ppb",function (syntax) {
+    syntax.declartionsPart = {};
+    pd(syntax.declartionsPart);
     if (c(head,"BEGIN")) {
       next();
-      pss();
+      syntax.statementSequence = {};
+      pss(syntax.statementSequence);
     }
     ce(head,"END");
     next();
     ce(head,"IDENT");
     next();
   });
-  var pss =dec("pss", function () {
-    ps();
+  var pss =dec("pss", function (syntax) {
+    sytax.statements = [];
+    var firstStatement = {};
+    ps(firstStatement);
+    syntax.statements.push(firstStatement);
     while (c(head,"SEMI")) {
-      next();
-      ps();
+      (function () {
+        var nextStatement = {};
+        next();
+        ps(nextStatement);
+        syntax.statements.push(nextStatement);
+      })();
     }
   });
-  var ps =dec("ps", function () {
+  var ps =dec("ps", function (syntax) {
     if (c(head,"WHILE")) {
-      pws();
+      syntax.whileStatement = {};
+      pws(syntax.whileStatement);
     }
     else if (c(head,"IF")) {
-      pis();
+      syntax.ifStatement = {};
+      pis(syntax.ifStatement);
     }
     else if (c(head,"IDENT")) {
+      var waitAndSee = {};
+      waitAndSee.ident = head;
       next();
-      pselect();
+      pselect(waitAndSee);
       if (c(head,"ASSN")) {
+        waitAndSee.equalsPart = {};
         next();
-        pe();
+        pe(waitAndSee.equalsPart);
+        syntax.assignmentPart = waitAndSee;
       }
       else {
-        pap();
+        waitAndSee.argumentsPart = {};
+        pap(waitAndSee.argumentsPart);
+        syntax.procedureCall = waitAndSee;
       }
     }
     else {
