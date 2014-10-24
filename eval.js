@@ -118,7 +118,7 @@ var parse = function (tokens) {
   var dec = function (name,fn) {
     return function() {
         log(name,1);
-        var ret = fn.call(this);
+        var ret = fn.apply(this,arguments);
         log("/"+name,false,true);
         if (ret != undefined) { return ret; }
     };
@@ -134,8 +134,8 @@ var parse = function (tokens) {
     next();
     ce(head,"SEMI");
     next();
-    syntax.modulePart.declartionsPart = {};
-    pd(syntax.modulePart.declartionsPart);
+    syntax.modulePart.declarationsPart = {};
+    pd(syntax.modulePart.declarationsPart);
     if(c(head,"BEGIN")) {
       syntax.modulePart.statementPart = {};
       ps(syntax.modulePart.statementsPart);
@@ -145,7 +145,7 @@ var parse = function (tokens) {
     ce(head,"IDENT");
     next();
     ce(head,"DOT");
-    return true;
+    return syntax;
   });
   var pd = dec("pd", function (syntax) {
     if (c(head,"CONST")) {
@@ -165,7 +165,9 @@ var parse = function (tokens) {
     }
     if (c(head,"PROCEDURE")) {
         syntax.procedureParts = [];
-        pdp(syntax.procedureParts);
+        var firstProcedure = {};
+        pdp(firstProcedure);
+        syntax.procedureParts.push(firstProcedure);
         ce(head,"SEMI");
         next();
         while(c(head,"PROCEDURE")){
@@ -241,7 +243,7 @@ var parse = function (tokens) {
     next();
   });
   var pss =dec("pss", function (syntax) {
-    sytax.statements = [];
+    syntax.statements = [];
     var firstStatement = {};
     ps(firstStatement);
     syntax.statements.push(firstStatement);
@@ -284,72 +286,99 @@ var parse = function (tokens) {
       e("bad statement");
     }
   });
-
-  var pws = dec("pws",function () {
+  var pws = dec("pws",function (syntax) {
     ce(head,"WHILE");
     next();
-    pe();
+    syntax.test = {};
+    pe(syntax.test);
     ce(head,"DO");
     next();
-    pss();
+    syntax.loop = {};
+    pss(syntax.loop);
     ce(head,"END");
     next();
   });
-  var pis = dec("pis",function () {
+  var pis = dec("pis",function (syntax) {
     ce(head,"IF");
     next();
-    pe();
+    syntax.test = {};
+    pe(syntax.test);
     ce(head,"THEN");
     next();
-    pss();
+    syntax.thenPart = {};
+    pss(syntax.thenPart);
+    syntax.elselif = [];
     while (c(head,"ELSIF")) {
-      pe();
+    (function () {
+      var elseif = {};
+      elseif.test ={};
+      pe(elseif.test);
       ce(head,"THEN");
       next();
-      pss();
+      elseif.thenPart = {};
+      pss(elseif.thenPart);
+      syntax.elseif.push(elseif);
+    })();
     }
     if (c(head,"ELSE")) {
+        syntax.elsePart = {};
         next();
-        pss();
+        pss(syntax.elsePart);
     }
     ce(head,"END");
     next();
   });
-  var pap = dec("pap",function () {
+  var pap = dec("pap",function (syntax) {
     if(c(head,"LPAREN")) {
+        var args = [];
+        var firstArg = {};
         next();
         // NB you MUST have an expression here, which deviates from the ebnf
-        pe();
+        pe(firstArg);
+        syntax.args = args;
+        args.push(firstArg);
         while (c(head,"COMMA")) {
+        (function () {
+          var arg = {};
           next();
-          pe();
+          pe(arg);
+          args.push(arg);
+        });
         }
         ce(head,"RPAREN");
         next();
     }
   });
-  var pph = ("pph",function () {
+  var pph = ("pph",function (syntax) {
     ce(head,"PROCEDURE");
     next();
     ce(head,"IDENT");
+    syntax.ident = {};
     next();
     if (c(head,"LPAREN")) {
       while (c(head,"LPAREN")) {
-        ppfp();
+        syntax.formalParams = [];
+        ppfp(syntax.formalParams);
       }
     }
   });
-  var ppfp =dec("ppfp", function () {
+  var ppfp =dec("ppfp", function (foramlParamArray) {
     ce(head,"LPAREN");
     next();
     if (c(head,"RPAREN")) {
       next();
       return;
     }
-    ppfpfps();
+    var param = {};
+    ppfpfps(param);
+    formalParamArray.push(param);
     while (!c(head,"RPAREN")) {
+    (function () {
+      var param = {};
       ce(head,"SEMI");
-      ppfpfps();
+      ppfpfps(param);
+      formalParamArray.push(param);
+    })();
     }
     next();
     return;
@@ -478,4 +507,4 @@ var fs = require('fs');
 var sampleString = fs.readFileSync("./example.obn").toString();
 var tokens = oberonScanner.scan(sampleString);
 //console.log(tokens);
-console.log(parse(tokens));
+console.log(JSON.stringify(parse(tokens)));
