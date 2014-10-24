@@ -95,7 +95,6 @@ var i = function (t) {
 */
 
 var parse = function (tokens) {
-  var syntax = {};
   var head = tokens[0];
   var rest = tokens.slice(1);
   var e = function (m) { throw new Error(m); };
@@ -126,15 +125,20 @@ var parse = function (tokens) {
   };
   
   var pm = dec("pm", function () {
+    var syntax = {};
+    syntax.modulePart = {};
     ce(head,"MODULE");
     next();
     ce(head,"IDENT");
+    syntax.modulePart.identPart = head;
     next();
     ce(head,"SEMI");
     next();
-    pd();
+    syntax.modulePart.declartionsPart = {};
+    pd(syntax.modulePart.declartionsPart);
     if(c(head,"BEGIN")) {
-      ps();
+      syntax.modulePart.statementsPart = {};
+      ps(syntax.modulePart.statementsPart);
     }
     ce(head,"END");
     next();
@@ -143,31 +147,35 @@ var parse = function (tokens) {
     ce(head,"DOT");
     return true;
   });
-  var pd = dec("pd", function () {
+  var pd = dec("pd", function (syntax) {
     if (c(head,"CONST")) {
+      syntax.constPart = {};
       next();
-      pdc();
+      pdc(syntax.constPart);
     }
     if (c(head,"VAR")) {
+      syntax.variablePart = {};
       next();
-      pdv();
+      pdv(syntax.variablePart);
     }
     if (c(head,"TYPE")) {
+      syntax.typePart = {};
       next();
-      pdt();
+      pdt(syntax.typePart);
     }
     if (c(head,"PROCEDURE")) {
-        pdp();
+        syntax.procedureParts = [];
+        pdp(syntax.procedureParts);
         ce(head,"SEMI");
         next();
         while(c(head,"PROCEDURE")){
-          pdp();
+          pdp(syntax.procedureParts);
           ce(head,"SEMI");
           next();
         }
     }
   });
-  var pdc= dec("pdc", function () {
+  var pdc= dec("pdc", function (syntax) {
     while(c(head,"IDENT")) {
       next();
       ce(head,"EQ");
