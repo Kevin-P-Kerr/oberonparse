@@ -111,7 +111,7 @@ var parse = function (tokens) {
           while (il--) {
               message = ' '+message;
           }
-          console.log(message);
+          //console.log(message);
           if (level) { indentLevel += level }
       };
   })();
@@ -383,118 +383,156 @@ var parse = function (tokens) {
     next();
     return;
   });
-  var ppfpfps =dec("ppfpfps", function () {
+  var ppfpfps =dec("ppfpfps", function (syntax) {
     if (c(head,"VAR")) {
       next();
     }
-    pidl();
+    syntax.identiferList = {};
+    pidl(syntax.identiferList);
     ce(head,"COLON");
-    pt();
+    syntax.type = {};
+    pt(syntax.type);
   });
-  var pidl = dec("pidl",function () {
+  var pidl = dec("pidl",function (syntax) {
     ce(head,"IDENT");
+    syntax.idents = [];
+    syntax.idents.push(head);
     next();
     while (c(head,"COMMA")) {
       next();
       ce(head,"IDENT");
+      syntax.idents.push(head);
       next();
     }
   });
-  var pt = dec("pt",function () {
+  var pt = dec("pt",function (syntax) {
     if (c(head,"IDENT")) {
+      syntax.ident = head;
       next();
       return;
     }
     else if (c(head,"ARRAY")) {
-      pat();
+      syntax.array = {};
+      pat(syntax.array);
       return;
     }
     else if (c(head,"RECORD")) {
-      prt();
+      syntax.record = {};
+      prt(syntax.record);
       return;
     }
     else {
       e("bad type decl: "+ head.type);
     }
   });
-  var pat =dec("pat", function () {
+  var pat =dec("pat", function (syntax) {
     ce(head,"ARRAY");
     next();
-    pe();
+    syntax.expression = {};
+    pe(syntax.expression);
     ce(head,"OF");
+    syntax.type = {};
     next();
-    pt();
+    pt(syntax.type);
   });
-  var pe = dec("pe",function () {
-    pse();
+  var pe = dec("pe",function (syntax) {
+    syntax.simpleExpression = {};
+    pse(syntax);
     var cc = function (t) { return c(head,t); };
     if (cc("EQ") || cc("HASH") || cc("LT") || cc("LTE") || cc("GT") || cc("GTE")) {
+      syntax.operand = head;
       next();
-      pse();
+      syntax.simpleExpression2 = {};
+      pse(syntax.simpleExpression2);
     }
   });
-  var pse = dec("pse",function () {
+  var pse = dec("pse",function (syntax) {
     var cc = function (t) { return c(head,t); };
     if (cc("PLUS") || cc("MINUS")) {
+      syntax.operand = head;
       next();
     }
-    pterm();
+    syntax.term = {};
+    pterm(syntax.term);
+    syntax.ae = [];
+    var exp = []
     while (cc("PLUS") || cc("MINUS") || cc("OR")) {
+      exp.push(head); 
       next();
-      pterm();
+      var term = {};
+      pterm(term);
+      exp.push(term);
+      syntax.ae.push(exp);
     }
   });
-  var pterm = dec("pterm",function () {
+  var pterm = dec("pterm",function (syntax) {
     var cc = function (t) { return c(head,t); };
-    pfactor();
+    syntax.factor = {};
+    pfactor(syntax.factor);
     while (cc("ASTER") || cc("DIV") || cc("MOD") || cc("AND")) {
+      syntax.op = head;
+      syntax.operand = {};
       next();
-      pfactor();
+      pfactor(syntax.operand);
     }
   });
-  var pselect =dec("pselect", function () {
+  var pselect =dec("pselect", function (syntax) {
     if (c(head,"DOT")) {
       next();
       ce(head,"IDENT");
+      syntax.ident = head;
       next();
     }
     else if (c(head,"LBRAK")) {
       next();
-      pe();
+      syntax.expr = {};
+      pe(syntax.expr);
       ce(head,"RBRAK");
       next();
     }
   });
-  var pfactor = dec("pfactor",function () {
+  var pfactor = dec("pfactor",function (syntax) {
     if (c(head,"IDENT")) {
+      syntax.ident = head;
+      syntax.selector = {};
       next();
-      pselect();
+      pselect(syntax.selector);
     }
     else if (c(head,"INT")) {
+      syntax.Int = head;
       next();
     }
     else if (c(head,"LPAREN")) {
+      syntax.expr = {};
       next();
-      pe();
+      pe(syntax.expr);
       ce(head,"RPAREN");
       next();
     }
     else if (c(head,"TILDE")) {
+      syntax.negate = true;
+      syntax.toBeNegated = {};
       next();
-      pfactor();
+      pfactor(syntax.toBeNegated);
     }
     else {
       e("bad factor:"+head.type);
     }
   });
 
-  var prt = dec("prt",function () {
+  var prt = dec("prt",function (syntax) {
     ce(head,"RECORD");
     next();
-    pfl();
+    syntax.fieldList = {};
+    pfl(synatx.fieldList);
     if (c(head,"SEMI")) {
+      syntax.otherFieldLists = {};
       while (c(head,"SEMI")) {
-        pfl();
+        (function () {
+          var fl = {};
+          pfl(fl);
+          syntax.otherFieldLists.push(fl);
+        })();
       }
     }
     ce(head,"END");
@@ -507,4 +545,4 @@ var fs = require('fs');
 var sampleString = fs.readFileSync("./example.obn").toString();
 var tokens = oberonScanner.scan(sampleString);
 //console.log(tokens);
-console.log(JSON.stringify(parse(tokens)));
+console.log(JSON.stringify(parse(tokens),false,2));
